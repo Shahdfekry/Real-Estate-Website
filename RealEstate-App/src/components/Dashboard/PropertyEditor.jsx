@@ -13,9 +13,9 @@ import {
   Paper,
   Box,
 } from "@mui/material";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { RealEstateContext } from "../../context/RealEstateContextProvider";
+import { ZonesContext } from "../../context/ZonesContextProvider";
 import { primaryColor } from "../../../theme";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -43,8 +43,8 @@ const validationSchema = Yup.object().shape({
   district: Yup.string().required("District is required"),
   address: Yup.string()
     .matches(
-      /^[a-zA-Z0-9\s,]+$/,
-      "Only letters, numbers, and spaces are allowed"
+      /^[a-zA-Z0-9\s,.\-/]+$/,
+      "Only letters, numbers, commas, periods, hyphens, and slashes are allowed"
     )
     .required("Address is required"),
   price: Yup.number()
@@ -88,17 +88,19 @@ const validationSchema = Yup.object().shape({
     .email("Invalid email")
     .required("Email is required"),
   contact_phone: Yup.string()
-    .matches(/^\+?\d[\d\s]*$/, "Phone number must contain only digits, optional '+' at the beginning, and optional spaces")
+    .matches(
+      /^\+?\d[\d\s]*$/,
+      "Phone number must contain only digits, optional '+' at the beginning, and optional spaces"
+    )
     .min(11, "Phone number must be at least 11 characters")
     .required("Phone is required"),
   image_url: Yup.string().url("Invalid URL"),
   amenities: Yup.string()
     .matches(
-      /^([a-zA-Z0-9\s\-\/]+)(,\s*[a-zA-Z0-9\s\-\/]+)*$/,
+      /^([a-zA-Z0-9\s\-/]+)(,\s*[a-zA-Z0-9\s\-/]+)*$/,
       "Enter amenities separated by commas"
     )
     .required("Amenities are required"),
-
 
   installment_price_per_month: Yup.number()
     .typeError("Installment price must be a number")
@@ -117,75 +119,64 @@ const validationSchema = Yup.object().shape({
 
 const PropertyEditor = () => {
   const navigate = useNavigate();
-  const { allProperties, getAllProperties, updateProperty } = useContext(RealEstateContext);
-  const [zones, setZones] = useState([]);
-  const [districts, setDistricts] = useState([]);
   const location = useLocation();
   const { propertyToEdit } = location.state || {};
+  const { updateProperty, addProperty } = useContext(RealEstateContext);
+  const { zonesList } = useContext(ZonesContext);
 
-  useEffect(() => {
-    console.log(" Data received from handleEdit:", propertyToEdit);
-  }, [propertyToEdit]);
-
-  useEffect(() => {
-
-    axios
-      .get("http://localhost:3000/zones")
-      .then((response) => setZones(response.data));
-  }, []);
+  const [districts, setDistricts] = useState([]);
 
   const formik = useFormik({
-
     initialValues: propertyToEdit
       ? {
-        ...propertyToEdit,
-        city: propertyToEdit.location?.city || "",
-        district: propertyToEdit.location?.district || "",
-        address: propertyToEdit.location?.address || "",
-        contact_email: propertyToEdit.contact?.email || "",
-        contact_phone: propertyToEdit.contact?.phone || "",
-        price: propertyToEdit.for_rent
-          ? ""
-          : propertyToEdit.price ? parseInt(propertyToEdit.price.replace(/[^0-9]/g, "")) : "",
-        rent_price: propertyToEdit.for_rent
-          ? propertyToEdit.rent_price ? parseInt(propertyToEdit.rent_price.replace(/[^0-9]/g, "")) : ""
-          : "",
-        amenities: propertyToEdit.amenities?.join(", ") || "",
-        installment_price_per_month:
-          propertyToEdit.installment_price_per_month
-            ? parseInt(propertyToEdit.installment_price_per_month.replace(/[^0-9]/g, ""))
+          ...propertyToEdit,
+          city: propertyToEdit.location?.city || "",
+          district: propertyToEdit.location?.district || "",
+          address: propertyToEdit.location?.address || "",
+          contact_email: propertyToEdit.contact?.email || "",
+          contact_phone: propertyToEdit.contact?.phone || "",
+          price: propertyToEdit.for_rent
+            ? ""
+            : parseInt(propertyToEdit.price.replace(/[^0-9]/g, "")) || "",
+          rent_price: propertyToEdit.for_rent
+            ? parseInt(propertyToEdit.rent_price.replace(/[^0-9]/g, "")) || ""
             : "",
-        installment_period_months:
-          propertyToEdit.installment_period_months || "",
-      }
+          amenities: propertyToEdit.amenities?.join(", ") || "",
+          installment_price_per_month:
+            parseInt(
+              propertyToEdit.installment_price_per_month?.replace(/[^0-9]/g, "")
+            ) || "",
+          installment_period_months:
+            propertyToEdit.installment_period_months || "",
+        }
       : {
-        name: "",
-        developer: "",
-        city: "",
-        district: "",
-        address: "",
-        price: "",
-        rent_price: "",
-        bedrooms: "",
-        bathrooms: "",
-        area_sqm: "",
-        year_built: "",
-        property_type: "",
-        contact_phone: "",
-        contact_email: "",
-        image_url: getRandomPexelsImage(),
-        description: "",
-        amenities: "",
-        for_rent: false,
-        furnished: false,
-        balcony: false,
-        parking: false,
-        installment_available: false,
-        installment_price_per_month: "",
-        installment_period_months: "",
-      },
+          name: "",
+          developer: "",
+          city: "",
+          district: "",
+          address: "",
+          price: "",
+          rent_price: "",
+          bedrooms: "",
+          bathrooms: "",
+          area_sqm: "",
+          year_built: "",
+          property_type: "",
+          contact_phone: "",
+          contact_email: "",
+          image_url: getRandomPexelsImage(),
+          description: "",
+          amenities: "",
+          for_rent: false,
+          furnished: false,
+          balcony: false,
+          parking: false,
+          installment_available: false,
+          installment_price_per_month: "",
+          installment_period_months: "",
+        },
     validationSchema,
-    onSubmit: async (values, { resetForm, setSubmitting }) => {
+    onSubmit: (values, { resetForm, setSubmitting }) => {
       try {
         const {
           city,
@@ -198,60 +189,54 @@ const PropertyEditor = () => {
 
         const propertyData = {
           ...rest,
-          price: values.price && Number(values.price).toLocaleString("en-EG") + " EGP",
-          rent_price: values.rent_price && Number(values.rent_price).toLocaleString("en-EG") + " EGP/month",
+          price: values.price
+            ? `${Number(values.price).toLocaleString()} EGP`
+            : "",
+          rent_price: values.rent_price
+            ? `${Number(values.rent_price).toLocaleString()} EGP/month`
+            : "",
           bedrooms: Number(values.bedrooms),
           bathrooms: Number(values.bathrooms),
           area_sqm: Number(values.area_sqm),
           year_built: Number(values.year_built),
           amenities: values.amenities.split(",").map((a) => a.trim()),
-          installment_price_per_month: values.installment_price_per_month && values.installment_price_per_month + " EGP/month",
+          installment_price_per_month: values.installment_price_per_month
+            ? `${values.installment_price_per_month} EGP/month`
+            : "",
           location: { city, district, address },
           contact: { phone: contact_phone, email: contact_email },
         };
 
-
-
         if (propertyToEdit) {
-
-          await updateProperty(propertyToEdit.id, propertyData);
+          updateProperty(propertyToEdit.id, propertyData);
           toast.success("Property updated successfully");
-          navigate("/dashboard/propertiesData");
-
         } else {
-
           const newProperty = {
             ...propertyData,
-            id: allProperties.length + 1
+            id: Date.now(),
           };
-
-          await axios.post("http://localhost:3000/all", newProperty);
+          addProperty(newProperty);
           toast.success("Property added successfully");
         }
 
-
         resetForm();
-        getAllProperties();
-
-      }
-      catch (err) {
+        navigate("/dashboard/propertiesData");
+      } catch (err) {
         toast.error("Error submitting form: " + err.message);
       } finally {
         setSubmitting(false);
       }
-    }
-  }
-  );
-
+    },
+  });
 
   useEffect(() => {
     const filteredDistricts = formik.values.city
-      ? zones
-        .filter((zone) => zone.city === formik.values.city)
-        .map((zone) => zone.district)
-      : zones.map((zone) => zone.district);
+      ? zonesList
+          .filter((zone) => zone.city === formik.values.city)
+          .map((zone) => zone.district)
+      : zonesList.map((zone) => zone.district);
     setDistricts(filteredDistricts);
-  }, [formik.values.city, zones]);
+  }, [formik.values.city, zonesList]);
 
   const checkboxes = [
     { name: "parking", label: "Parking" },
@@ -289,29 +274,16 @@ const PropertyEditor = () => {
     >
       <Typography
         variant="h5"
-        sx={{
-          fontWeight: "bold",
-          letterSpacing: "2px",
-          textTransform: "uppercase",
-          textAlign: "center",
-          mt: 1,
-          mb: 4,
-          mx: "auto",
-          color: "#FF8000",
-        }}
+        textAlign="center"
+        mb={4}
+        color="#FF8000"
+        fontWeight="bold"
       >
-        {location.state?.propertyToEdit ? "Update Property" : "Add New Property"}
+        {propertyToEdit ? "Update Property" : "Add New Property"}
       </Typography>
+
       <form onSubmit={formik.handleSubmit}>
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            rowGap: 3,
-            columnGap: 8,
-            mb: 3,
-          }}
-        >
+        <Box mb={3}>
           <RadioGroup
             row
             name="for_rent"
@@ -323,80 +295,62 @@ const PropertyEditor = () => {
             <FormControlLabel value="sale" control={<Radio />} label="Sale" />
             <FormControlLabel value="rent" control={<Radio />} label="Rent" />
           </RadioGroup>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {checkboxes.map((field) => (
-              <FormControlLabel
-                key={field.name}
-                control={
-                  <Checkbox
-                    checked={formik.values[field.name]}
-                    onChange={formik.handleChange}
-                    name={field.name}
-                  />
-                }
-                label={field.label}
-              />
+        </Box>
+
+        {/* Checkboxes */}
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, mb: 3 }}>
+          {checkboxes.map(({ name, label }) => (
+            <FormControlLabel
+              key={name}
+              control={
+                <Checkbox
+                  checked={formik.values[name]}
+                  onChange={formik.handleChange}
+                  name={name}
+                />
+              }
+              label={label}
+            />
+          ))}
+        </Box>
+
+        {/* City / District */}
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, mb: 3 }}>
+          <TextField
+            select
+            label="City"
+            name="city"
+            fullWidth
+            value={formik.values.city}
+            onChange={formik.handleChange}
+            error={formik.touched.city && Boolean(formik.errors.city)}
+            helperText={formik.touched.city && formik.errors.city}
+          >
+            {[...new Set(zonesList.map((z) => z.city))].map((city) => (
+              <MenuItem key={city} value={city}>
+                {city}
+              </MenuItem>
             ))}
-          </Box>
+          </TextField>
+
+          <TextField
+            select
+            label="District"
+            name="district"
+            fullWidth
+            value={formik.values.district}
+            onChange={formik.handleChange}
+            error={formik.touched.district && Boolean(formik.errors.district)}
+            helperText={formik.touched.district && formik.errors.district}
+          >
+            {districts.map((d) => (
+              <MenuItem key={d} value={d}>
+                {d}
+              </MenuItem>
+            ))}
+          </TextField>
         </Box>
-
-        <Box
-          sx={{
-            display: "flex",
-            columnGap: 4,
-            rowGap: 2,
-            mb: 3,
-            flexWrap: "wrap",
-          }}
-        >
-          <Box sx={{ flex: "1 1 48%", minWidth: 280 }}>
-            <TextField
-              select
-              label="City"
-              name="city"
-              fullWidth
-              value={formik.values.city}
-              onChange={formik.handleChange}
-              error={formik.touched.city && Boolean(formik.errors.city)}
-              helperText={formik.touched.city && formik.errors.city}
-            >
-              {[...new Set(zones.map((z) => z.city))].map((city) => (
-                <MenuItem key={city} value={city}>
-                  {city}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Box>
-
-          <Box sx={{ flex: "1 1 48%", minWidth: 280 }}>
-            <TextField
-              select
-              label="District"
-              name="district"
-              fullWidth
-              value={formik.values.district}
-              onChange={formik.handleChange}
-              error={formik.touched.district && Boolean(formik.errors.district)}
-              helperText={formik.touched.district && formik.errors.district}
-            >
-              {districts.map((d) => (
-                <MenuItem key={d} value={d}>
-                  {d}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            columnGap: 4,
-            rowGap: 2,
-            mb: 3,
-          }}
-        >
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, mb: 3 }}>
           {[
             { name: "name", label: "Property Name" },
             { name: "developer", label: "Developer" },
@@ -417,49 +371,46 @@ const PropertyEditor = () => {
             { name: "image_url", label: "Image URL" },
             ...(formik.values.installment_available
               ? [
-                {
-                  name: "installment_price_per_month",
-                  label: "Installment Price/Month",
-                },
-                {
-                  name: "installment_period_months",
-                  label: "Installment Period (months)",
-                },
-              ]
+                  {
+                    name: "installment_price_per_month",
+                    label: "Installment Price/Month",
+                  },
+                  {
+                    name: "installment_period_months",
+                    label: "Installment Period (months)",
+                  },
+                ]
               : []),
             { name: "amenities", label: "Amenities (comma-separated)" },
-          ].map(({ name, label }) => (
-            <Box key={name} sx={{ flex: "1 1 48%", minWidth: 280 }}>
-              {renderTextField(name, label)}
+          ].map(({ name, label, type }) => (
+            <Box key={name} sx={{ flex: "1 1 45%", minWidth: 250 }}>
+              {renderTextField(name, label, type)}
             </Box>
           ))}
         </Box>
-
         <Box sx={{ mb: 3 }}>
           <TextField
             label="Description"
             name="description"
             multiline
             rows={3}
+            fullWidth
             value={formik.values.description}
             onChange={formik.handleChange}
             error={
               formik.touched.description && Boolean(formik.errors.description)
             }
             helperText={formik.touched.description && formik.errors.description}
-            fullWidth
           />
         </Box>
+
         <Box>
-          <Button
-            type="submit"
-            variant="contained"
-          >
+          <Button type="submit" variant="contained">
             {propertyToEdit ? "Update Property" : "Add Property"}
           </Button>
         </Box>
       </form>
-    </Paper >
+    </Paper>
   );
 };
 

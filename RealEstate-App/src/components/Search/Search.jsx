@@ -50,9 +50,6 @@ const Search = () => {
           mb: 4,
           display: "flex",
           justifyContent: "center",
-          position: "sticky",
-          top: "100px",
-          zIndex: 2000,
         }}
       >
         <SearchBar isMobile={isMobile} setDrawerOpen={setDrawerOpen} />
@@ -65,7 +62,7 @@ const Search = () => {
           flexDirection: isMobile ? "column" : "row",
           width: "100%",
           mx: "auto",
-          columnGap: 4,
+          gap: { xs: 4, md: 4, lg: 1 },
         }}
       >
         {/* Mobile Drawer vs Desktop Sidebar */}
@@ -79,7 +76,7 @@ const Search = () => {
             sx={{
               width: "23%",
               position: "sticky",
-              top: "200px",
+              top: "100px",
               alignSelf: "flex-start",
               backgroundColor: "background.paper",
               zIndex: 1000,
@@ -103,8 +100,7 @@ const Search = () => {
                 flexWrap: "wrap",
                 backgroundColor: "background.default",
                 px: { xs: 2, sm: 3, md: 5, lg: 8 },
-                columnGap: 6,
-                rowGap: 4,
+                gap: 4,
               }}
             >
               {filteredResults.map((property) => (

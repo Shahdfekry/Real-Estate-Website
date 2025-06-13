@@ -1,179 +1,207 @@
-import React, { useContext, useState } from 'react';
-import { RealEstateContext } from '../../context/RealEstateContextProvider.jsx';
-import { DataGrid } from '@mui/x-data-grid';
-import { Dialog, DialogTitle, DialogActions, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useTheme } from '@emotion/react';
+import React, { useContext, useState } from "react";
+import { RealEstateContext } from "../../context/RealEstateContextProvider.jsx";
+import { DataGrid } from "@mui/x-data-grid";
+import { Dialog, DialogTitle, DialogActions, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useTheme } from "@emotion/react";
 
 export default function PropertiesData() {
-
-
   const { allProperties, deleteProperty } = useContext(RealEstateContext);
   const [open, setOpen] = useState(false);
   const [propertyToDelete, setPropertyToDelete] = useState(null);
   const navigate = useNavigate();
   const theme = useTheme();
 
-
   const handleEdit = (property) => {
-    console.log('Data to be edited:', property);
-    navigate('/dashboard/propertyManagement', { state: { propertyToEdit: property } });
-
+    console.log("Data to be edited:", property);
+    navigate("/dashboard/propertyManagement", {
+      state: { propertyToEdit: property },
+    });
   };
-
 
   const handleDelete = (property) => {
     setPropertyToDelete(property);
     setOpen(true);
   };
 
-
   const handleConfirmDelete = () => {
     if (propertyToDelete) {
-      deleteProperty(propertyToDelete.realId);
+      deleteProperty(propertyToDelete.id);
     }
     setOpen(false);
     setPropertyToDelete(null);
   };
-
 
   const handleCancelDelete = () => {
     setOpen(false);
     setPropertyToDelete(null);
   };
 
+  const rows = allProperties.map((property, index) => {
+    const price_display = property.for_rent
+      ? property.rent_price
+      : property.price;
 
-  const rows = allProperties.map((property, index) => ({
-    ...property,
-    index: index + 1,
-    realId: property.id,
-    purpose: property.for_rent ? 'Rent' : 'Sale'
-  }));
-
+    return {
+      ...property,
+      id: property.id ?? index + 1,
+      index: index + 1,
+      purpose: property.for_rent ? "Rent" : "Sale",
+      address: property.location?.address || "",
+      district: property.location?.district || "",
+      city: property.location?.city || "",
+      price_display,
+    };
+  });
 
   const columns = [
     {
-      field: 'index',
-      headerName: '#',
+      field: "index",
+      headerName: "#",
       width: 60,
-      align: 'center',
-      headerAlign: 'center',
+      align: "center",
+      headerAlign: "center",
       sortable: false,
       filterable: false,
     },
-    { field: 'name', headerName: 'Name', flex: 1, align: "center", headerAlign: 'center' },
-    { field: 'property_type', headerName: 'Type', flex: 1, align: "center", headerAlign: 'center' },
-    { field: 'developer', headerName: 'Developer', flex: 1, align: "center", headerAlign: 'center' },
     {
-      field: 'purpose',
-      headerName: 'Purpose',
-      flex: 0.5,
-      align: 'center',
-      headerAlign: 'center',
-    },
-    {
-      field: 'price_display',
-      headerName: 'Price',
-      flex: 1,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params) =>
-        params.row.for_rent ? params.row.rent_price : params.row.price
-    },
-    {
-      field: 'area_sqm',
-      headerName: 'Area (sqm)',
-      flex: 0.5,
-      align: "center",
-      headerAlign: 'center',
-      renderCell: (params) => (`${params.row.area_sqm} m²`)
-    },
-    { field: 'bedrooms', headerName: 'Bedrooms', flex: 0.5, align: "center", headerAlign: 'center' },
-    { field: 'bathrooms', headerName: 'Bathrooms', flex: 0.5, align: "center", headerAlign: 'center' },
-    {
-      field: 'address',
-      headerName: 'Address',
+      field: "name",
+      headerName: "Name",
       flex: 1,
       align: "center",
-      headerAlign: 'center',
-      renderCell: (params) => params.row.location?.address || ''
+      headerAlign: "center",
     },
     {
-      field: 'district',
-      headerName: 'District',
+      field: "property_type",
+      headerName: "Type",
       flex: 1,
       align: "center",
-      headerAlign: 'center',
-      renderCell: (params) => params.row.location?.district || ''
+      headerAlign: "center",
     },
     {
-      field: 'city',
-      headerName: 'City',
+      field: "developer",
+      headerName: "Developer",
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "purpose",
+      headerName: "Purpose",
       flex: 0.8,
       align: "center",
-      headerAlign: 'center',
-      renderCell: (params) => params.row.location?.city || ''
+      headerAlign: "center",
     },
     {
-      field: 'editButton',
-      headerName: 'Edit',
+      field: "price_display",
+      headerName: "Price",
       flex: 1,
-      align: 'center',
-      headerAlign: 'center',
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "area_sqm",
+      headerName: "Area (sqm)",
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
+      renderCell: (params) => `${params.row.area_sqm} m²`,
+    },
+    {
+      field: "bedrooms",
+      headerName: "Bedrooms",
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "bathrooms",
+      headerName: "Bathrooms",
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "address",
+      headerName: "Address",
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "district",
+      headerName: "District",
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "city",
+      headerName: "City",
+      flex: 0.8,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "editButton",
+      headerName: "Edit",
+      flex: 1,
+      align: "center",
+      headerAlign: "center",
       sortable: false,
       filterable: false,
       renderCell: (params) => (
         <button
           onClick={() => handleEdit(params.row)}
           style={{
-            padding: '10px 30px',
-            backgroundColor: 'green',
-            color: '#fff',
-            border: 'none',
+            padding: "10px 30px",
+            backgroundColor: "green",
+            color: "#fff",
+            border: "none",
             borderRadius: 4,
-            cursor: 'pointer',
-            fontSize: 14
+            cursor: "pointer",
+            fontSize: 14,
           }}
         >
           Edit
         </button>
-      )
+      ),
     },
     {
-      field: 'deleteButton',
-      headerName: 'Delete',
+      field: "deleteButton",
+      headerName: "Delete",
       flex: 1,
-      align: 'center',
-      headerAlign: 'center',
+      align: "center",
+      headerAlign: "center",
       sortable: false,
       filterable: false,
       renderCell: (params) => (
         <button
           onClick={() => handleDelete(params.row)}
           style={{
-            padding: '10px 25px',
-            backgroundColor: '#d32f2f',
-            color: '#fff',
-            border: 'none',
+            padding: "10px 25px",
+            backgroundColor: "#d32f2f",
+            color: "#fff",
+            border: "none",
             borderRadius: 4,
-            cursor: 'pointer',
-            fontSize: 14
+            cursor: "pointer",
+            fontSize: 14,
           }}
         >
           Delete
         </button>
-      )
-    }
+      ),
+    },
   ];
 
   return (
-    <div style={{ height: '850px', width: '100%' }}>
+    <div style={{ height: "850px", width: "100%" }}>
       <DataGrid
         rows={rows}
         columns={columns}
         sx={{
-          '& .MuiDataGrid-columnHeaderTitle': {
-            fontWeight: 'bold',
+          "& .MuiDataGrid-columnHeaderTitle": {
+            fontWeight: "bold",
           },
         }}
       />
@@ -192,8 +220,8 @@ export default function PropertiesData() {
       >
         <DialogTitle
           sx={{
-            textAlign: 'center',
-            fontSize: '1.2rem',
+            textAlign: "center",
+            fontSize: "1.2rem",
             fontWeight: 600,
             color: theme.palette.text.primary,
           }}
@@ -203,7 +231,7 @@ export default function PropertiesData() {
 
         <DialogActions
           sx={{
-            justifyContent: 'center',
+            justifyContent: "center",
             paddingBottom: 3,
             gap: 2,
           }}
@@ -212,12 +240,12 @@ export default function PropertiesData() {
             onClick={handleConfirmDelete}
             variant="contained"
             sx={{
-              backgroundColor: 'green',
-              color: 'white',
+              backgroundColor: "green",
+              color: "white",
               minWidth: 100,
               fontWeight: 600,
-              '&:hover': {
-                backgroundColor: '#006400', // darker green
+              "&:hover": {
+                backgroundColor: "#006400", // darker green
               },
             }}
           >
@@ -227,12 +255,12 @@ export default function PropertiesData() {
             onClick={handleCancelDelete}
             variant="contained"
             sx={{
-              backgroundColor: 'red',
-              color: 'white',
+              backgroundColor: "red",
+              color: "white",
               minWidth: 100,
               fontWeight: 600,
-              '&:hover': {
-                backgroundColor: '#b71c1c', // darker red
+              "&:hover": {
+                backgroundColor: "#b71c1c",
               },
             }}
           >

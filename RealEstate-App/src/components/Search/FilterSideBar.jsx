@@ -45,7 +45,15 @@ const FilterSidebar = () => {
   };
 
   return (
-    <Paper elevation={3} sx={{ width: 300, p: 4, height: 600 }}>
+    <Paper
+      elevation={3}
+      sx={{
+        width: 300,
+        maxWidth: { xs: "100%", md: "100%" },
+        p: 4,
+        height: 600,
+      }}
+    >
       <Typography variant="h6" gutterBottom>
         Filters
       </Typography>
